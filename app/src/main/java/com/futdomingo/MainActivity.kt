@@ -8,8 +8,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +26,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -44,9 +43,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection.Companion.In
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.res.ResourcesCompat.ThemeCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -97,9 +100,8 @@ fun App(mNavController: NavController?, drawnViewModel: TeamsDrawnViewModel?)
         .background(Color.White)
         ) {
 
-
         TopTextField(Modifier.align(Alignment.TopCenter))
-        PlayersName(players)
+        PlayersName(players,Modifier.align(Alignment.TopCenter))
         DrawButton(teams = players,
             onClickEvent = {
                 playersToDraw ->
@@ -123,17 +125,28 @@ fun App(mNavController: NavController?, drawnViewModel: TeamsDrawnViewModel?)
 
 @Composable
 fun TopTextField(modifier: Modifier) {
-    Text(modifier = modifier.padding(0.dp, 0.dp, 0.dp, 20.dp),
+    Text(modifier = modifier
+        .padding(0.dp, 0.dp, 0.dp, 20.dp)
+        .offset(0.dp, 16.dp),
         text = "Lista de Jogadores")
 }
 
 @Composable
-fun PlayersName(playerList: List<String>) {
+fun PlayersName(playerList: List<String>, modifier: Modifier) {
     var position = 1
+    val height = (LocalConfiguration.current.screenHeightDp/2) - (LocalConfiguration.current.screenHeightDp/10)
+    val offset = LocalConfiguration.current.screenHeightDp/10
 
     for (player in playerList) {
-        Text(text = "$position - $player", modifier = Modifier.offset(10.dp,(18*position).dp))
-        position++
+
+        Surface(modifier = modifier
+            .offset(0.dp,offset.dp)
+            .height(height.dp)
+            .fillMaxWidth(0.93f)
+            .border(2.dp, color = Color.Gray, shape = RoundedCornerShape(6.dp))) {
+            Text(text = "$position - $player", modifier = Modifier.offset(10.dp,(18*position).dp))
+            position++
+        }
     }
 
 }
@@ -155,19 +168,31 @@ fun DrawButton(teams: List<String>,
 @Composable
 fun InputCenterComponents(show: Boolean, inputPlayers: (String) -> Unit, modifier: Modifier) {
 
-    val typedText = remember { mutableStateOf("") }
+    var typedText by remember { mutableStateOf("") }
     var invalidCharacters by remember {  mutableStateOf(false) }
+    var deviceConfigurations = LocalConfiguration.current
+    val offset = (deviceConfigurations.screenHeightDp/2)/3
 
     if (show) {
 
-        Surface(modifier = modifier.wrapContentSize(), shadowElevation = 8.dp, shape = RoundedCornerShape(10.dp)) {
+        Surface(
+            modifier = modifier
+                .wrapContentSize()
+                .offset(0.dp, offset.dp),
+            shadowElevation = 8.dp,
+            shape = RoundedCornerShape(10.dp)) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = "Adicionar novo jogadores",
+                    modifier = modifier.padding(16.dp),
+                    textAlign = TextAlign.Start)
+
                 OutlinedTextField(
-                    value = typedText.value,
+                    modifier = modifier.padding(16.dp,0.dp),
+                    value = typedText,
                     onValueChange = {
-                        if(it.length <= 20) typedText.value = it
+                        if(it.length <= 20) typedText = it
                         invalidCharacters = isInvalidInput(it)
-                        if(it == " ") typedText.value = "" },
+                        if(it == " ") typedText = "" },
                     label = { Text(text = "Nome")},
                     isError = invalidCharacters,
                     trailingIcon = { if(invalidCharacters) Icon(Icons.Filled.Info,  "") },
@@ -177,10 +202,12 @@ fun InputCenterComponents(show: Boolean, inputPlayers: (String) -> Unit, modifie
                 )
 
                 Button(
-                    onClick = { if(!invalidCharacters) {
-                        inputPlayers(typedText.value)
-                        typedText.value = "" }
-                    }
+                    onClick = { if(!invalidCharacters && typedText.isNotEmpty()) {
+                        inputPlayers(typedText)
+                        typedText = "" }
+                    },
+                    modifier = modifier.padding(0.dp,10.dp),
+                    shape = RoundedCornerShape(8.dp)
 
                 ) {
                     Text(text = "Inserir")
@@ -195,7 +222,8 @@ fun InputCenterComponents(show: Boolean, inputPlayers: (String) -> Unit, modifie
 fun BottomFAB(show: Boolean, onClick : (Boolean) -> Unit, modifier: Modifier) {
 
     FloatingActionButton(modifier = modifier.padding(0.dp,0.dp, 16.dp, 16.dp),
-        onClick = { onClick(!show)} ) {
+        onClick = { onClick(!show)},
+        ) {
 
         val icon = when(show) {
             true -> Icons.Filled.Clear
