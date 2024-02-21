@@ -157,49 +157,36 @@ fun InputCenterComponents(show: Boolean, inputPlayers: (String) -> Unit, modifie
 
     val typedText = remember { mutableStateOf("") }
     var invalidCharacters by remember {  mutableStateOf(false) }
-    var count  by remember { mutableIntStateOf(0) }
-    val limit = 20
 
+    if (show) {
 
+        Surface(modifier = modifier.wrapContentSize(), shadowElevation = 8.dp, shape = RoundedCornerShape(10.dp)) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                OutlinedTextField(
+                    value = typedText.value,
+                    onValueChange = {
+                        if(it.length <= 20) typedText.value = it
+                        invalidCharacters = isInvalidInput(it)
+                        if(it == " ") typedText.value = "" },
+                    label = { Text(text = "Nome")},
+                    isError = invalidCharacters,
+                    trailingIcon = { if(invalidCharacters) Icon(Icons.Filled.Info,  "") },
+                    singleLine = true,
+                    supportingText = {
+                        if(invalidCharacters) Text("Dígito inválido", modifier = Modifier.align(Alignment.End)) }
+                )
 
-
-
-     if (show) {
-
-
-             Surface(modifier = modifier.wrapContentSize(), shadowElevation = 8.dp) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    OutlinedTextField(
-                        value = typedText.value,
-                        onValueChange = { if(it.length <= 20) typedText.value = it
-                            invalidCharacters = isInvalidInput(it)
-                            count = it.length
-                            if(it == " ") typedText.value = "" },
-                        label = { Text(text = "Nome")},
-                        isError = invalidCharacters,
-                        trailingIcon = { if(invalidCharacters) Icon(Icons.Filled.Info,  "") },
-                        singleLine = true,
-                        supportingText = {
-                            if(invalidCharacters) Text("Dígito inválido", modifier = Modifier.align(Alignment.End)) }
-                    )
-
-                    Button(
-                        onClick = { if(!invalidCharacters) {
-                            inputPlayers(typedText.value)
-                            typedText.value = "" }
-                        }
-
-                    ) {
-                        Text(text = "Inserir")
+                Button(
+                    onClick = { if(!invalidCharacters) {
+                        inputPlayers(typedText.value)
+                        typedText.value = "" }
                     }
+
+                ) {
+                    Text(text = "Inserir")
                 }
-
-             }
-
-
-
-
-
+            }
+        }
      }
 
 }
@@ -236,12 +223,15 @@ fun drawTeams(playerList: List<String>): List<String> {
 
 private fun isInvalidInput(input: String): Boolean {
     val pattern = "[^a-zA-z]".toRegex()
+    val accents = "[^áàâãéèêíïóôõöúçñ]".toRegex()
     val whiteSpace = "\\s".toRegex()
 
     var isInvalid = false
 
     for(letter in input) {
         isInvalid = pattern.matches(letter.toString())
+
+        if (pattern.matches(letter.toString())) isInvalid = accents.matches(letter.toString())
         if (whiteSpace.matches(letter.toString())) isInvalid = false
 
         if(isInvalid) break
