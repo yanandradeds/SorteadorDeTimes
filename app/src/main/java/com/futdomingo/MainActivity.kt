@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 
 
 import androidx.compose.foundation.layout.fillMaxSize
@@ -167,20 +168,20 @@ fun InputCenterComponents(show: Boolean, inputPlayers: (String) -> Unit, modifie
 
 
              Surface(modifier = modifier.wrapContentSize(), shadowElevation = 8.dp) {
-                Column {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     OutlinedTextField(
                         value = typedText.value,
                         onValueChange = { typedText.value = it
                             invalidCharacters = isInvalidInput(it)
-                            count = it.length},
+                            count = it.length
+                            if(it == " ") typedText.value = "" },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, autoCorrect = false),
                         label = { Text(text = "Nome")},
                         isError = invalidCharacters,
                         trailingIcon = { if(invalidCharacters) Icon(Icons.Filled.Info,  "") },
                         singleLine = true,
                         supportingText = {
-                            if(invalidCharacters) Text("Dígito inválido", modifier = Modifier.align(Alignment.End))
-                            else Text("$count/$limit") }
+                            if(invalidCharacters) Text("Dígito inválido", modifier = Modifier.align(Alignment.End)) }
                     )
 
                     Button(
@@ -235,12 +236,17 @@ fun drawTeams(playerList: List<String>): List<String> {
 }
 
 private fun isInvalidInput(input: String): Boolean {
-    val pattern = "[^a-zA-z]"
-    val regex = Regex(pattern)
+    val pattern = "[^a-zA-z]".toRegex()
+    val whiteSpace = "\\s".toRegex()
 
-    input.forEach {
-        if (regex.matches(it.toString())) return true
+    var isInvalid = false
+
+    for(letter in input) {
+        isInvalid = pattern.matches(letter.toString())
+        if (whiteSpace.matches(letter.toString())) isInvalid = false
+
+        if(isInvalid) break
     }
 
-    return false
+    return isInvalid
 }
