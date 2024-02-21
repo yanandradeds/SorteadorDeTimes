@@ -171,11 +171,10 @@ fun InputCenterComponents(show: Boolean, inputPlayers: (String) -> Unit, modifie
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     OutlinedTextField(
                         value = typedText.value,
-                        onValueChange = { typedText.value = it
+                        onValueChange = { if(it.length <= 20) typedText.value = it
                             invalidCharacters = isInvalidInput(it)
                             count = it.length
                             if(it == " ") typedText.value = "" },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, autoCorrect = false),
                         label = { Text(text = "Nome")},
                         isError = invalidCharacters,
                         trailingIcon = { if(invalidCharacters) Icon(Icons.Filled.Info,  "") },
