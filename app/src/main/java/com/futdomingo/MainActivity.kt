@@ -1,14 +1,18 @@
 package com.futdomingo
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+
 import androidx.compose.foundation.layout.Column
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,9 +22,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
@@ -43,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection.Companion.In
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
@@ -66,7 +76,7 @@ class MainActivity : ComponentActivity()
 
         setContent {
             FutDomingoTheme {
-                Surface {
+                Surface(Modifier.fillMaxSize()) {
                     val navController: NavHostController = rememberNavController()
                     val viewModel = TeamsDrawnViewModel()
 
@@ -89,105 +99,122 @@ class MainActivity : ComponentActivity()
 }
 
 @Composable
-fun App(mNavController: NavController?, drawnViewModel: TeamsDrawnViewModel?)
+fun App(navController: NavController, drawnViewModel: TeamsDrawnViewModel)
 {
     val players = remember { mutableStateListOf<String>() }
-    val showMiddleComponents = remember { mutableStateOf(false)}
-    val navController = mNavController!!
-
-    Box(modifier = Modifier
-        .fillMaxSize(1f)
-        .background(Color.White)
-        ) {
-
-        TopTextField(Modifier.align(Alignment.TopCenter))
-        PlayersName(players,Modifier.align(Alignment.TopCenter))
-        DrawButton(teams = players,
-            onClickEvent = {
-                playersToDraw ->
-                drawnViewModel?.teamsDrawn?.value = drawTeams(playersToDraw)
-                navController.navigate("drawnTeamsPage")},
-            modifier = Modifier.align(Alignment.BottomCenter),
-            navController = navController)
-
-        InputCenterComponents(show = showMiddleComponents.value,
-            inputPlayers = { players.add(it) },
-            Modifier.align(Alignment.Center))
-
-        BottomFAB(show = showMiddleComponents.value,
-            onClick = { input -> showMiddleComponents.value = input },
-            modifier = Modifier.align(Alignment.BottomEnd))
+    var showMiddleComponents by remember { mutableStateOf(false)}
+    val context = LocalContext.current
+    val finalList: ArrayList<String> = arrayListOf()
 
 
-    }
+    Column(modifier = Modifier.fillMaxSize(1f)) {
+        Text(text = "Lista de jogadores",
+            modifier = Modifier
+                .weight(weight = 1f, fill = false)
+                .align(Alignment.CenterHorizontally)
+                .padding(0.dp, 20.dp))
 
-}
+        Box(modifier = Modifier
+            .weight(10f)
+            .fillMaxWidth()
+            .background(Color.LightGray)
+            .padding(0.dp, 4.dp)){
 
-@Composable
-fun TopTextField(modifier: Modifier) {
-    Text(modifier = modifier
-        .padding(0.dp, 0.dp, 0.dp, 20.dp)
-        .offset(0.dp, 16.dp),
-        text = "Lista de Jogadores")
-}
+            Surface(
+                Modifier
+                    .fillMaxSize()
+                    .align(Alignment.Center)) {
 
-@Composable
-fun PlayersName(playerList: List<String>, modifier: Modifier) {
-    var position = 1
-    val height = (LocalConfiguration.current.screenHeightDp/2) - (LocalConfiguration.current.screenHeightDp/10)
-    val offset = LocalConfiguration.current.screenHeightDp/10
+                LazyColumn() {
 
-    for (player in playerList) {
+                    itemsIndexed(players.toList()) {index, player ->
+                        Surface(modifier = Modifier
+                            .fillMaxWidth().padding(4.dp,4.dp)
+                            .background(color = Color.LightGray, shape = RoundedCornerShape(2.dp)),
+                            shadowElevation = 6.dp
+                            ) {
+                            Row(modifier = Modifier.background(color = Color.White, shape = RoundedCornerShape(2.dp))) {
+                                Text("${index+1} - $player", modifier = Modifier.padding(10.dp,0.dp))
+                                Spacer(modifier = Modifier.weight(1f))
+                                Icon(imageVector = Icons.Filled.Clear, contentDescription = "",
+                                    tint = Color.Red, modifier = Modifier.padding(10.dp,0.dp))
+                            }
 
-        Surface(modifier = modifier
-            .offset(0.dp,offset.dp)
-            .height(height.dp)
-            .fillMaxWidth(0.93f)
-            .border(2.dp, color = Color.Gray, shape = RoundedCornerShape(6.dp))) {
-            Text(text = "$position - $player", modifier = Modifier.offset(10.dp,(18*position).dp))
-            position++
+                        }
+
+                    }
+                }
+                
+            }
+
+            InputCenterComponents(
+                show = showMiddleComponents,
+                inputPlayers = { players.add(it) },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter))
+
         }
+
+        Box(
+            Modifier
+                .weight(1.25f)
+                .fillMaxWidth()) {
+            Button(
+                onClick = {
+                    if (players.size > 9) {
+                        for (p in players) {
+                            finalList.add(p)
+                        }
+                        drawnViewModel.players.value = finalList
+                        navController.navigate("drawnTeamsPage")
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Minimo de 10 jogadores para sorteio",
+                            Toast.LENGTH_LONG).show()
+                    }
+                          },
+                modifier = Modifier.align(Alignment.Center),
+                shape = RoundedCornerShape(8.dp)) {
+                Text(text = "Sortear")
+            }
+
+            BottomFAB(show = showMiddleComponents,
+                onClick = {input -> showMiddleComponents = input},
+                modifier = Modifier.align(Alignment.BottomEnd))
+        }
+
+
     }
 
 }
 
-@Composable
-fun DrawButton(teams: List<String>,
-               onClickEvent: (List<String>) -> Unit,
-               modifier: Modifier,
-               navController: NavController) {
-    Button(onClick = {
-        onClickEvent(teams)
-    },
-        modifier = modifier.offset(0.dp, (-80).dp),
-        shape = RoundedCornerShape(8.dp)) {
-        Text(text = "Sortear")
-    }
-}
+
+
+
+
 
 @Composable
 fun InputCenterComponents(show: Boolean, inputPlayers: (String) -> Unit, modifier: Modifier) {
 
     var typedText by remember { mutableStateOf("") }
     var invalidCharacters by remember {  mutableStateOf(false) }
-    var deviceConfigurations = LocalConfiguration.current
-    val offset = (deviceConfigurations.screenHeightDp/2)/3
 
-    if (show) {
+    Surface(
+        modifier = modifier
+            .wrapContentSize()
+            .padding(0.dp, 16.dp),
+        shadowElevation = 8.dp,
+        shape = RoundedCornerShape(10.dp)) {
 
-        Surface(
-            modifier = modifier
-                .wrapContentSize()
-                .offset(0.dp, offset.dp),
-            shadowElevation = 8.dp,
-            shape = RoundedCornerShape(10.dp)) {
+        if (show) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = "Adicionar novo jogadores",
-                    modifier = modifier.padding(16.dp),
+                    modifier = Modifier.padding(16.dp),
                     textAlign = TextAlign.Start)
 
                 OutlinedTextField(
-                    modifier = modifier.padding(16.dp,0.dp),
+                    modifier = Modifier.padding(16.dp,0.dp),
                     value = typedText,
                     onValueChange = {
                         if(it.length <= 20) typedText = it
@@ -206,7 +233,7 @@ fun InputCenterComponents(show: Boolean, inputPlayers: (String) -> Unit, modifie
                         inputPlayers(typedText)
                         typedText = "" }
                     },
-                    modifier = modifier.padding(0.dp,10.dp),
+                    modifier = Modifier.padding(0.dp,10.dp),
                     shape = RoundedCornerShape(8.dp)
 
                 ) {
@@ -214,14 +241,14 @@ fun InputCenterComponents(show: Boolean, inputPlayers: (String) -> Unit, modifie
                 }
             }
         }
-     }
+ }
 
 }
 
 @Composable
 fun BottomFAB(show: Boolean, onClick : (Boolean) -> Unit, modifier: Modifier) {
 
-    FloatingActionButton(modifier = modifier.padding(0.dp,0.dp, 16.dp, 16.dp),
+    FloatingActionButton(modifier = modifier.padding(0.dp,0.dp,10.dp,10.dp),
         onClick = { onClick(!show)},
         ) {
 
@@ -233,20 +260,6 @@ fun BottomFAB(show: Boolean, onClick : (Boolean) -> Unit, modifier: Modifier) {
         Icon(icon , contentDescription = "Plus icon/Less icon")
     }
 
-}
-
-fun drawTeams(playerList: List<String>): List<String> {
-    val oldList: MutableList<String> = mutableListOf()
-    val drawnList: ArrayList<String> = arrayListOf()
-    oldList.addAll(playerList)
-
-    while (oldList.size != 0) {
-        val position = (0..< oldList.size).random()
-        drawnList.add(oldList[position])
-        oldList.removeAt(position)
-    }
-
-    return drawnList
 }
 
 private fun isInvalidInput(input: String): Boolean {

@@ -1,11 +1,11 @@
 package com.futdomingo
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -15,49 +15,44 @@ import com.futdomingo.ViewModel.TeamsDrawnViewModel
 
 
 @Composable
-fun DrawnTeams(navController: NavController?, viewModel: TeamsDrawnViewModel?){
+fun DrawnTeams(navController: NavController?, viewModel: TeamsDrawnViewModel){
 
     val teams = remember {
         mutableStateListOf<String>()
     }
 
-    viewModel?.teamsDrawn?.observeAsState().let {
-        teams.addAll(viewModel?.teamsDrawn?.value!!)
-    }
+    teams.addAll(drawnTeams(viewModel))
 
-    Box(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize()) {
+        for (team in teams.toList()) {
 
-        if (!teams.isEmpty() && teams.size > 9) {
-
-            val numberOfTeams = when (teams.size) {
-                in 0..5 -> 1
-                in 6..10 -> 2
-                in 11..15 -> 3
-                in 15..20 -> 4
-                else -> throw IndexOutOfBoundsException()
-
+            Surface(Modifier.fillMaxWidth(), shadowElevation = 4.dp) {
+                Text(text = team)
             }
-
-            val arrayTeams = arrayListOf<String>()
-            var buildString = ""
-
-            for (i in 1..numberOfTeams) {
-                repeat(5) {
-                    if (teams.isNotEmpty()) {
-                        buildString += teams.first() + ", "
-                        teams.removeAt(0)
-                    }
-                }
-                arrayTeams.add(buildString)
-
-                Text(text = "$i - ${arrayTeams[i - 1]}", modifier = Modifier.offset(10.dp,(18*i).dp))
-            }
-
         }
-
-
     }
 
 
 }
 
+private fun drawnTeams(viewModel: TeamsDrawnViewModel): ArrayList<String> {
+    val mTeams = arrayListOf<String>()
+    val toDrawTeams = viewModel.players.value!!
+
+    while (toDrawTeams.isNotEmpty()) {
+        var buildingTeam = ""
+
+        repeat(5) {
+            if(toDrawTeams.isNotEmpty()) {
+                val selectedPlayer = (toDrawTeams.indices).random()
+
+                buildingTeam += toDrawTeams[selectedPlayer] + ", "
+                toDrawTeams.removeAt(selectedPlayer)
+            }
+        }
+
+        mTeams.add("${mTeams.size+1} - $buildingTeam")
+    }
+
+    return mTeams
+}

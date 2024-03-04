@@ -5,6 +5,6 @@ import androidx.lifecycle.ViewModel
 
 class TeamsDrawnViewModel : ViewModel() {
 
-    var teamsDrawn = MutableLiveData<List<String>>(listOf())
+    var players = MutableLiveData<ArrayList<String>>()
 
 }
