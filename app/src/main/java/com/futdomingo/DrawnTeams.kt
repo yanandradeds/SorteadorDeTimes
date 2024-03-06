@@ -10,12 +10,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.map
 import androidx.navigation.NavController
 import com.futdomingo.ViewModel.TeamsDrawnViewModel
 
@@ -27,7 +27,11 @@ fun DrawnTeams(navController: NavController?, viewModel: TeamsDrawnViewModel){
         mutableStateMapOf<Int,String>()
     }
 
-    teams.putAll(drawnTeams(viewModel))
+    viewModel.liveDataPlayers.observe(LocalLifecycleOwner.current) { list ->
+        teams.putAll(drawnTeams(list.map {it.name}))
+    }
+
+
 
     Column(Modifier.fillMaxSize()) {
         for (i in 1..teams.size) {
@@ -53,17 +57,19 @@ fun DrawnTeams(navController: NavController?, viewModel: TeamsDrawnViewModel){
 
 }
 
-private fun drawnTeams(viewModel: TeamsDrawnViewModel): Map<Int,String> {
+private fun drawnTeams(players: List<String>): Map<Int,String> {
     val mTeams = mutableMapOf<Int,String>()
-    val toDrawTeams = viewModel.players.value!!
+    val arrayListPlayers = arrayListOf<String>()
+    arrayListPlayers.addAll(players)
 
-    for(i in 1..(toDrawTeams.size/5)) {
+
+    for(i in 1..(arrayListPlayers.size/5)) {
         for (x in 1..5) {
-            if (toDrawTeams.isNotEmpty()) {
-                val selectedPlayer = (toDrawTeams.indices).random()
+            if (arrayListPlayers.isNotEmpty()) {
+                val selectedPlayer = (arrayListPlayers.indices).random()
                 if (x == 1) mTeams[i] = ""
-                mTeams[i] += toDrawTeams[selectedPlayer]
-                toDrawTeams.removeAt(selectedPlayer)
+                mTeams[i] = "${mTeams[i]}${arrayListPlayers[selectedPlayer]}"
+                arrayListPlayers.removeAt(selectedPlayer)
                 if (x != 5) mTeams[i] += ","
 
             } else {

@@ -1,5 +1,7 @@
 package com.futdomingo
 
+import android.app.Application
+import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -30,13 +32,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -45,6 +49,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.futdomingo.ViewModel.TeamsDrawnViewModel
+import com.futdomingo.repository.AppDatabase
 import com.futdomingo.ui.theme.FutDomingoTheme
 
 class MainActivity : ComponentActivity()
@@ -57,7 +62,8 @@ class MainActivity : ComponentActivity()
             FutDomingoTheme {
                 Surface(Modifier.fillMaxSize()) {
                     val navController: NavHostController = rememberNavController()
-                    val viewModel = TeamsDrawnViewModel()
+                    val context = LocalContext.current
+                    val viewModel = TeamsDrawnViewModel(context)
 
                     NavHost(navController = navController, startDestination = "mainPage") {
                         composable("mainPage") {
@@ -80,11 +86,20 @@ class MainActivity : ComponentActivity()
 @Composable
 fun App(navController: NavController, drawnViewModel: TeamsDrawnViewModel)
 {
-    val players = remember { mutableStateListOf<String>() }
+    val players = remember {
+        mutableStateListOf<String>()
+    }
     var showMiddleComponents by remember { mutableStateOf(false)}
     val context = LocalContext.current
-    val finalList: ArrayList<String> = arrayListOf()
 
+    drawnViewModel.liveDataPlayers.observe(LocalLifecycleOwner.current){
+        if (it.isNotEmpty()) {
+            for (player in it){
+                if(!players.contains(player.name)) players.add(player.name)
+            }
+        }
+
+    }
 
     Column(modifier = Modifier.fillMaxSize(1f)) {
         Text(text = "Lista de jogadores",
@@ -108,7 +123,8 @@ fun App(navController: NavController, drawnViewModel: TeamsDrawnViewModel)
 
                     itemsIndexed(players.toList()) {index, player ->
                         Surface(modifier = Modifier
-                            .fillMaxWidth().padding(4.dp,4.dp)
+                            .fillMaxWidth()
+                            .padding(4.dp, 4.dp)
                             .background(color = Color.LightGray, shape = RoundedCornerShape(2.dp)),
                             shadowElevation = 6.dp
                             ) {
@@ -116,8 +132,10 @@ fun App(navController: NavController, drawnViewModel: TeamsDrawnViewModel)
                                 Text("${index+1} - $player", modifier = Modifier.padding(10.dp,0.dp))
                                 Spacer(modifier = Modifier.weight(1f))
                                 Icon(imageVector = Icons.Filled.Clear, contentDescription = "",
-                                    tint = Color.Red, modifier = Modifier.padding(10.dp,0.dp)
-                                        .clickable { players.removeAt(index) })
+                                    tint = Color.Red, modifier = Modifier
+                                        .padding(10.dp, 0.dp)
+                                        .clickable { players.removeAt(index)
+                                        drawnViewModel.delete(player) })
                             }
 
                         }
@@ -129,7 +147,7 @@ fun App(navController: NavController, drawnViewModel: TeamsDrawnViewModel)
 
             InputCenterComponents(
                 show = showMiddleComponents,
-                inputPlayers = { players.add(it) },
+                inputPlayers = { drawnViewModel.saveData(it) },
                 modifier = Modifier
                     .align(Alignment.BottomCenter))
 
@@ -142,10 +160,6 @@ fun App(navController: NavController, drawnViewModel: TeamsDrawnViewModel)
             Button(
                 onClick = {
                     if (players.size > 9) {
-                        for (p in players) {
-                            finalList.add(p)
-                        }
-                        drawnViewModel.players.value = finalList
                         navController.navigate("drawnTeamsPage")
                     } else {
                         Toast.makeText(
@@ -227,8 +241,7 @@ fun InputCenterComponents(show: Boolean, inputPlayers: (String) -> Unit, modifie
                 }
             }
         }
- }
-
+    }
 }
 
 @Composable
